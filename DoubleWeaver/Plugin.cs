@@ -18,7 +18,7 @@ namespace DoubleWeaver
         private const string commandName = "/doublewaver";
 
         private Dictionary<uint, Stopwatch> actionRequestTime = new Dictionary<uint, Stopwatch> { };
-        private long RTT = 500;
+        private long RTT = 300;
 
         private DalamudPluginInterface pi;
         private Configuration configuration;
