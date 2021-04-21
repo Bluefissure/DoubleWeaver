@@ -1,4 +1,4 @@
-# DoubleWaver
+# DoubleWeaver
 Double weaving in high latency network.
 
 Currently **WIP**, may cause unwanted / cheated animation speed / lock.
