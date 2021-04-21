@@ -113,7 +113,7 @@ namespace DoubleWeaver
                             Marshal.Copy(bytes, 0, a4 + 16, bytes.Length);
                             logLine += $"-> {defaultAnimationLock}ms";
                         }
-                        PluginLog.Log(logLine);
+                        PluginLog.LogDebug(logLine);
                     }
                 }
             }
@@ -134,7 +134,7 @@ namespace DoubleWeaver
                 if (actionRequestTime.ContainsKey(a3))
                     actionRequestTime.Remove(a3);
                 actionRequestTime.Add(a3, stopwatch);
-                PluginLog.Log(logLine);
+                PluginLog.LogDebug(logLine);
             }
             catch
             {
