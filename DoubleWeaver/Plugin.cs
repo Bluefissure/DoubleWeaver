@@ -131,7 +131,7 @@ namespace DoubleWeaver
                     {
                         long elapsedTime = 0;
                         long laggingTime = 0;
-                        if (actionRequestTime.ContainsKey(actionEffect.ActionId) && false)
+                        if (actionRequestTime.ContainsKey(actionEffect.ActionId))
                         {
                             actionRequestTime.Remove(actionEffect.ActionId);
                             elapsedTime = Math.Max(stopwatch.ElapsedMilliseconds - 75, elapsedTime);
