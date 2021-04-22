@@ -18,8 +18,8 @@ namespace DoubleWeaver
         private const string commandName = "/doublewaver";
 
         private Dictionary<uint, Stopwatch> actionRequestTime = new Dictionary<uint, Stopwatch> { };
-        private long RTT = 100; // set a default value if PingPlugin is not installed
-        private long LastRTT = 100;
+        private long RTT = 0; // set a default value if PingPlugin is not installed
+        private long LastRTT = 0;
 
         private DalamudPluginInterface pi;
         private Configuration configuration;
@@ -34,6 +34,11 @@ namespace DoubleWeaver
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
         private delegate Int64 ActionRequestFuncDelegate(Int64 a1, uint a2, uint a3);
         private Hook<ActionRequestFuncDelegate> ActionRequestFuncHook;
+
+        public IntPtr AdjustActionIdFunc;
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
+        private delegate Int64 AdjustActionIdFuncDelegate(Int64 a1, int a2);
+        private Hook<AdjustActionIdFuncDelegate> AdjustActionIdFuncHook;
 
         private delegate void UpdateRTTDelegate(ExpandoObject expando);
 
@@ -63,6 +68,8 @@ namespace DoubleWeaver
             PluginLog.Log($"ActionEffectFunc:{ActionEffectFunc:X}");
             ActionRequestFunc = this.pi.TargetModuleScanner.ScanText("E8 ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? FF 50 18");
             PluginLog.Log($"ActionRequestFunc:{ActionRequestFunc:X}");
+            AdjustActionIdFunc = this.pi.TargetModuleScanner.ScanText("8B DA BE ?? ?? ?? ??") - 0xF;
+            PluginLog.Log($"AdjustActionIdFunc:{AdjustActionIdFunc:X}");
 
             ActionEffectFuncHook = new Hook<ActionEffectFuncDelegate>(
                 ActionEffectFunc,
@@ -72,9 +79,14 @@ namespace DoubleWeaver
                 ActionRequestFunc,
                 new ActionRequestFuncDelegate(ActionRequestFuncDetour)
             );
+            AdjustActionIdFuncHook = new Hook<AdjustActionIdFuncDelegate>(
+                AdjustActionIdFunc,
+                new AdjustActionIdFuncDelegate(AdjustActionIdFuncDetour)
+            );
 
             ActionEffectFuncHook.Enable();
             ActionRequestFuncHook.Enable();
+            AdjustActionIdFuncHook.Enable();
 
             this.pi.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
             {
@@ -90,33 +102,48 @@ namespace DoubleWeaver
         }
 
 
-        private char ActionEffectFuncDetour(Int64 a1, int a2, Int16 a3, IntPtr a4, int size)
+        private Int64 AdjustActionIdFuncDetour(Int64 a1, int a2)
+        {
+            Int64 result = this.AdjustActionIdFuncHook.Original(a1, a2);
+            if(a2 != (int)result && a2 != 21)
+                PluginLog.LogDebug($"AdjustActionId a1:{a1} a2:{a2} result:{result}");
+            return result;
+        }
+
+
+        private char ActionEffectFuncDetour(Int64 a1, int sourceActorId, Int16 a3, IntPtr a4, int size)
         {
             try
             {
-                if ((size == 0x78) || (size == 0x278) ||
-                    (size == 0x4B8) || (size == 0x6F8) || (size == 0x938))
+                if (((size == 0x78) || (size == 0x278) ||
+                    (size == 0x4B8) || (size == 0x6F8) || (size == 0x938)))
                 {
+                    var selfActorId = this.pi.ClientState.LocalPlayer.ActorId;
                     var actionId = Marshal.ReadInt32(a4 + 8);
                     actionRequestTime.TryGetValue((uint)actionId, out Stopwatch stopwatch);
                     stopwatch?.Stop();
                     var actionEffect = (ActionEffect)Marshal.PtrToStructure(a4, typeof(ActionEffect));
-                    if (actionEffect.SourceSequence > 0 && actionRequestTime.ContainsKey(actionEffect.ActionId))
+                    if (actionEffect.SourceSequence > 0 && (int)sourceActorId == selfActorId && actionEffect.AnimationLockDuration > 0.5)
                     {
-                        actionRequestTime.Remove(actionEffect.ActionId);
-                        var serverAnimationLock = actionEffect.AnimationLockDuration * 1000;
-                        var elapsedTime = Math.Max(stopwatch.ElapsedMilliseconds - 75, 0);
-                        string logLine = $"Status ActionId:{actionEffect.ActionId} Sequence:{actionEffect.SourceSequence} " +
-                            $"Elapsed:{elapsedTime}ms RTT:{RTT}ms AnimationLockDuration:{serverAnimationLock}ms ";
-                        if (serverAnimationLock > 500)
+                        long elapsedTime = 0;
+                        long laggingTime = 0;
+                        if (actionRequestTime.ContainsKey(actionEffect.ActionId) && false)
                         {
-                            var laggingTime = Math.Min(Math.Min(elapsedTime, LastRTT), 500);
-                            float animationLock = Math.Max(serverAnimationLock - laggingTime, 300);
-                            animationLock = Math.Max(animationLock, serverAnimationLock / 2);
-                            byte[] bytes = BitConverter.GetBytes(animationLock / 1000);
-                            Marshal.Copy(bytes, 0, a4 + 16, bytes.Length);
-                            logLine += $"-> {animationLock}ms";
+                            actionRequestTime.Remove(actionEffect.ActionId);
+                            elapsedTime = Math.Max(stopwatch.ElapsedMilliseconds - 75, elapsedTime);
+                            laggingTime = Math.Min(Math.Min(elapsedTime, LastRTT), 500);
                         }
+                        else
+                        {
+                            laggingTime = Math.Min(LastRTT, 500);
+                        }
+                        var serverAnimationLock = actionEffect.AnimationLockDuration * 1000;
+                        float animationLock = Math.Max(serverAnimationLock - laggingTime, Math.Max(serverAnimationLock / 2, 300));
+                        byte[] bytes = BitConverter.GetBytes(animationLock / 1000);
+                        Marshal.Copy(bytes, 0, a4 + 16, bytes.Length);
+                        string logLine = $"Status ActionId:{actionEffect.ActionId} Sequence:{actionEffect.SourceSequence} " +
+                            $"Elapsed:{elapsedTime}ms RTT:{RTT}ms Lagging:{laggingTime}ms " +
+                            $"AnimationLockDuration:{serverAnimationLock}ms -> {animationLock}ms";
                         PluginLog.LogDebug(logLine);
                     }
                 }
@@ -125,7 +152,7 @@ namespace DoubleWeaver
             {
                 PluginLog.Log("Don't crash the game");
             }
-            var result = ActionEffectFuncHook.Original(a1, a2, a3, a4, size);
+            var result = ActionEffectFuncHook.Original(a1, sourceActorId, a3, a4, size);
             return result;
         }
 
@@ -155,6 +182,7 @@ namespace DoubleWeaver
             this.pi.Unsubscribe("PingPlugin");
             ActionEffectFuncHook.Dispose();
             ActionRequestFuncHook.Dispose();
+            AdjustActionIdFuncHook.Dispose();
             this.pi.CommandManager.RemoveHandler(commandName);
             this.pi.Dispose();
         }
