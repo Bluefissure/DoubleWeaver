@@ -18,7 +18,8 @@ namespace DoubleWeaver
         private const string commandName = "/doublewaver";
 
         private Dictionary<uint, Stopwatch> actionRequestTime = new Dictionary<uint, Stopwatch> { };
-        private long RTT = 300;
+        private long RTT = 100; // set a default value if PingPlugin is not installed
+        private long LastRTT = 100;
 
         private DalamudPluginInterface pi;
         private Configuration configuration;
@@ -85,6 +86,7 @@ namespace DoubleWeaver
         {
             PluginLog.LogDebug($"LastRTT:{expando.LastRTT} AverageRTT:{expando.AverageRTT}");
             RTT = (long)expando.AverageRTT;
+            LastRTT = (long)expando.LastRTT;
         }
 
 
@@ -108,10 +110,12 @@ namespace DoubleWeaver
                             $"Elapsed:{elapsedTime}ms RTT:{RTT}ms AnimationLockDuration:{serverAnimationLock}ms ";
                         if (serverAnimationLock > 500)
                         {
-                            float defaultAnimationLock = Math.Max(serverAnimationLock - Math.Min(elapsedTime, RTT), 500);
-                            byte[] bytes = BitConverter.GetBytes(defaultAnimationLock / 1000);
+                            var laggingTime = Math.Min(Math.Min(elapsedTime, LastRTT), 500);
+                            float animationLock = Math.Max(serverAnimationLock - laggingTime, 300);
+                            animationLock = Math.Max(animationLock, serverAnimationLock / 2);
+                            byte[] bytes = BitConverter.GetBytes(animationLock / 1000);
                             Marshal.Copy(bytes, 0, a4 + 16, bytes.Length);
-                            logLine += $"-> {defaultAnimationLock}ms";
+                            logLine += $"-> {animationLock}ms";
                         }
                         PluginLog.LogDebug(logLine);
                     }
