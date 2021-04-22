@@ -77,7 +77,7 @@ namespace DoubleWeaver
 
             this.pi.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
             {
-                HelpMessage = "A useful message to display in /xlhelp"
+                HelpMessage = "Double weaving in high latency network."
             });
         }
 
