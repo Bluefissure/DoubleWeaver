@@ -34,11 +34,12 @@ namespace DoubleWeaver
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
         private delegate Int64 ActionRequestFuncDelegate(Int64 a1, uint a2, uint a3);
         private Hook<ActionRequestFuncDelegate> ActionRequestFuncHook;
-
+        /*
         public IntPtr AdjustActionIdFunc;
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
         private delegate Int64 AdjustActionIdFuncDelegate(Int64 a1, int a2);
         private Hook<AdjustActionIdFuncDelegate> AdjustActionIdFuncHook;
+        */
 
         private delegate void UpdateRTTDelegate(ExpandoObject expando);
 
@@ -68,8 +69,8 @@ namespace DoubleWeaver
             PluginLog.Log($"ActionEffectFunc:{ActionEffectFunc:X}");
             ActionRequestFunc = this.pi.TargetModuleScanner.ScanText("E8 ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? FF 50 18");
             PluginLog.Log($"ActionRequestFunc:{ActionRequestFunc:X}");
-            AdjustActionIdFunc = this.pi.TargetModuleScanner.ScanText("8B DA BE ?? ?? ?? ??") - 0xF;
-            PluginLog.Log($"AdjustActionIdFunc:{AdjustActionIdFunc:X}");
+            // AdjustActionIdFunc = this.pi.TargetModuleScanner.ScanText("8B DA BE ?? ?? ?? ??") - 0xF;
+            // PluginLog.Log($"AdjustActionIdFunc:{AdjustActionIdFunc:X}");
 
             ActionEffectFuncHook = new Hook<ActionEffectFuncDelegate>(
                 ActionEffectFunc,
@@ -79,14 +80,16 @@ namespace DoubleWeaver
                 ActionRequestFunc,
                 new ActionRequestFuncDelegate(ActionRequestFuncDetour)
             );
+            /*
             AdjustActionIdFuncHook = new Hook<AdjustActionIdFuncDelegate>(
                 AdjustActionIdFunc,
                 new AdjustActionIdFuncDelegate(AdjustActionIdFuncDetour)
             );
+            */
 
             ActionEffectFuncHook.Enable();
             ActionRequestFuncHook.Enable();
-            AdjustActionIdFuncHook.Enable();
+            //AdjustActionIdFuncHook.Enable();
 
             this.pi.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
             {
@@ -101,7 +104,7 @@ namespace DoubleWeaver
             LastRTT = (long)expando.LastRTT;
         }
 
-
+        /*
         private Int64 AdjustActionIdFuncDetour(Int64 a1, int a2)
         {
             Int64 result = this.AdjustActionIdFuncHook.Original(a1, a2);
@@ -109,6 +112,7 @@ namespace DoubleWeaver
                 PluginLog.LogDebug($"AdjustActionId a1:{a1} a2:{a2} result:{result}");
             return result;
         }
+        */
 
 
         private char ActionEffectFuncDetour(Int64 a1, int sourceActorId, Int16 a3, IntPtr a4, int size)
@@ -182,7 +186,7 @@ namespace DoubleWeaver
             this.pi.Unsubscribe("PingPlugin");
             ActionEffectFuncHook.Dispose();
             ActionRequestFuncHook.Dispose();
-            AdjustActionIdFuncHook.Dispose();
+            //AdjustActionIdFuncHook.Dispose();
             this.pi.CommandManager.RemoveHandler(commandName);
             this.pi.Dispose();
         }
