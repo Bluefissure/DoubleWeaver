@@ -1,9 +1,6 @@
 # DoubleWeaver
-Double weaving in high latency network.
 
-Don't try to change the animation lock limitation in the code, or you are **cheating**.
-
-**Use at your own risk.**
+Double weaving in high latency network by subtracting the connection latency from animation lock time.
 
 ### To Use
 
