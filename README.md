@@ -13,4 +13,4 @@ You may need to install **PingPlugin** for a better latency detection.
 
 ### Relative Project
 
-The idea is original from [XivAlexander](https://github.com/Soreepeong/XivAlexander).
+The idea is originally from [XivAlexander](https://github.com/Soreepeong/XivAlexander).
