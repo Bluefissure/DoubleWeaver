@@ -121,7 +121,7 @@ namespace DoubleWeaver
             {
                 if (((size == 0x78) || (size == 0x278) ||
                     (size == 0x4B8) || (size == 0x6F8) || (size == 0x938)) && 
-                    (int)sourceActorId == this.pi.ClientState.LocalPlayer.ActorId)
+                    (int)sourceActorId == this.pi.ClientState.LocalPlayer?.ActorId)
                 {
                     var actionId = Marshal.ReadInt32(a4 + 8);
                     actionRequestTime.TryGetValue((uint)actionId, out Stopwatch stopwatch);
