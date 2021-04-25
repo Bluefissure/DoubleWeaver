@@ -120,14 +120,14 @@ namespace DoubleWeaver
             try
             {
                 if (((size == 0x78) || (size == 0x278) ||
-                    (size == 0x4B8) || (size == 0x6F8) || (size == 0x938)))
+                    (size == 0x4B8) || (size == 0x6F8) || (size == 0x938)) && 
+                    (int)sourceActorId == this.pi.ClientState.LocalPlayer.ActorId)
                 {
-                    var selfActorId = this.pi.ClientState.LocalPlayer.ActorId;
                     var actionId = Marshal.ReadInt32(a4 + 8);
                     actionRequestTime.TryGetValue((uint)actionId, out Stopwatch stopwatch);
                     stopwatch?.Stop();
                     var actionEffect = (ActionEffect)Marshal.PtrToStructure(a4, typeof(ActionEffect));
-                    if (actionEffect.SourceSequence > 0 && (int)sourceActorId == selfActorId && actionEffect.AnimationLockDuration > 0.5)
+                    if (actionEffect.SourceSequence > 0 && actionEffect.AnimationLockDuration > 0.5)
                     {
                         long elapsedTime = 0;
                         long laggingTime = 0;
@@ -152,8 +152,9 @@ namespace DoubleWeaver
                     }
                 }
             }
-            catch
+            catch(Exception e)
             {
+                PluginLog.Log($"Exception: {e}");
                 PluginLog.Log("Don't crash the game");
             }
             var result = ActionEffectFuncHook.Original(a1, sourceActorId, a3, a4, size);
