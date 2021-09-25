@@ -2,12 +2,18 @@
 using Dalamud.Plugin;
 using Dalamud.Hooking;
 using System;
-using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Dynamic;
+using Dalamud.IoC;
+using Dalamud.Game;
+using Dalamud.Game.Gui;
+using Dalamud.Game.Gui.Toast;
+using Dalamud.Game.ClientState;
+using Dalamud.Data;
+using Dalamud.Logging;
+using Dalamud.Plugin.Ipc;
 
 namespace DoubleWeaver
 {
@@ -21,7 +27,6 @@ namespace DoubleWeaver
         private long RTT = 0; // set a default value if PingPlugin is not installed
         private long LastRTT = 0;
 
-        private DalamudPluginInterface pi;
         private Configuration configuration;
         private PluginUI ui;
 
@@ -43,6 +48,27 @@ namespace DoubleWeaver
 
         private delegate void UpdateRTTDelegate(ExpandoObject expando);
 
+        [PluginService]
+        public static CommandManager CmdManager { get; private set; }
+        [PluginService]
+        public static Framework Framework { get; private set; }
+        [PluginService]
+        public static SigScanner SigScanner { get; private set; }
+        [PluginService]
+        public static DalamudPluginInterface Interface { get; private set; }
+        [PluginService]
+        public static GameGui GameGui { get; private set; }
+        [PluginService]
+        public static ChatGui ChatGui { get; private set; }
+        [PluginService]
+        public static ToastGui ToastGui { get; private set; }
+        [PluginService]
+        public static ClientState ClientState { get; private set; }
+        [PluginService]
+        public static DataManager Data { get; private set; }
+
+        public static ICallGateSubscriber<object, object> IpcSubscriber;
+
         [StructLayout(LayoutKind.Sequential)]
         internal struct ActionEffect
         {
@@ -55,19 +81,17 @@ namespace DoubleWeaver
             internal readonly Int16 SourceSequence;
         }
 
-        public void Initialize(DalamudPluginInterface pluginInterface)
+        public Plugin()
         {
-            this.pi = pluginInterface;
             
-            this.configuration = this.pi.GetPluginConfig() as Configuration ?? new Configuration();
-            this.configuration.Initialize(this.pi);
+            this.configuration = Interface.GetPluginConfig() as Configuration ?? new Configuration();
+            this.configuration.Initialize(Interface);
 
-            this.pi.Subscribe("PingPlugin", UpdateRTTDetour);
+            InitPingPluginIPC();
 
-
-            ActionEffectFunc = this.pi.TargetModuleScanner.ScanText("4D 8B F9 0F B6 91 ?? ?? ?? ??") - 0xF;
+            ActionEffectFunc = SigScanner.ScanText("4D 8B F9 0F B6 91 ?? ?? ?? ??") - 0xF;
             PluginLog.Log($"ActionEffectFunc:{ActionEffectFunc:X}");
-            ActionRequestFunc = this.pi.TargetModuleScanner.ScanText("E8 ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? FF 50 18");
+            ActionRequestFunc = SigScanner.ScanText("E8 ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? FF 50 18");
             PluginLog.Log($"ActionRequestFunc:{ActionRequestFunc:X}");
             // AdjustActionIdFunc = this.pi.TargetModuleScanner.ScanText("8B DA BE ?? ?? ?? ??") - 0xF;
             // PluginLog.Log($"AdjustActionIdFunc:{AdjustActionIdFunc:X}");
@@ -91,10 +115,17 @@ namespace DoubleWeaver
             ActionRequestFuncHook.Enable();
             //AdjustActionIdFuncHook.Enable();
 
-            this.pi.CommandManager.AddHandler(commandName, new CommandInfo(OnCommand)
+            CmdManager.AddHandler(commandName, new CommandInfo(OnCommand)
             {
                 HelpMessage = "Double weaving in high latency network."
             });
+        }
+
+        private void InitPingPluginIPC()
+        {
+            PluginLog.Log("Initializing IPC");
+            IpcSubscriber = Interface.GetIpcSubscriber<object, object>("PingPlugin.Ipc");
+            IpcSubscriber.Subscribe(UpdateRTTDetour);
         }
 
         private void UpdateRTTDetour(dynamic expando)
@@ -121,7 +152,7 @@ namespace DoubleWeaver
             {
                 if (((size == 0x78) || (size == 0x278) ||
                     (size == 0x4B8) || (size == 0x6F8) || (size == 0x938)) && 
-                    (int)sourceActorId == this.pi.ClientState.LocalPlayer?.ActorId)
+                    (int)sourceActorId == ClientState.LocalPlayer?.ObjectId)
                 {
                     var actionId = Marshal.ReadInt32(a4 + 8);
                     actionRequestTime.TryGetValue((uint)actionId, out Stopwatch stopwatch);
@@ -183,13 +214,13 @@ namespace DoubleWeaver
 
         public void Dispose()
         {
-            //this.ui.Dispose();
-            this.pi.Unsubscribe("PingPlugin");
+            // this.ui.Dispose();
+            // this.pi.Unsubscribe("PingPlugin");
             ActionEffectFuncHook.Dispose();
             ActionRequestFuncHook.Dispose();
-            //AdjustActionIdFuncHook.Dispose();
-            this.pi.CommandManager.RemoveHandler(commandName);
-            this.pi.Dispose();
+            // AdjustActionIdFuncHook.Dispose();
+            CmdManager.RemoveHandler(commandName);
+            Interface.Dispose();
         }
 
         private void OnCommand(string command, string args)
