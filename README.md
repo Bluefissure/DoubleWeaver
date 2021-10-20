@@ -12,7 +12,9 @@ Follow the [instructions](https://github.com/Bluefissure/DalamudPlugins/tree/Blu
 
 #### 1. [What is the difference with NoClippy?](https://github.com/Bluefissure/DoubleWeaver/issues/1)
 
-#### 2. Will I get banned (by FFLogs or SE)?
+#### 2. [What happens if Ping Plugin value is inaccurate?](https://github.com/Bluefissure/DoubleWeaver/issues/4)
+
+#### 3. Will I get banned (by FFLogs or SE)?
 
 I don't think so, I've made lots of limitations to this tool to make sure it won't affect the animation lock too much.
 
