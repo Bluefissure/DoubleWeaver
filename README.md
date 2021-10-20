@@ -1,6 +1,6 @@
 # DoubleWeaver
 
-Double weaving in high latency network by subtracting the connection latency from animation lock time.
+Double weaving in high latency network by subtracting the connection latency / action elapsing time from animation lock time.
 
 ### To Use
 
