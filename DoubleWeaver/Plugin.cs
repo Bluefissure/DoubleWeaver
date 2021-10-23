@@ -21,7 +21,7 @@ namespace DoubleWeaver
     {
         public string Name => "Double Weaver";
 
-        private const string commandName = "/doublewaver";
+        private const string commandName = "/doubleweaver";
 
         private Dictionary<uint, Stopwatch> actionRequestTime = new Dictionary<uint, Stopwatch> { };
         private long RTT = 0; // set a default value if PingPlugin is not installed
@@ -114,11 +114,12 @@ namespace DoubleWeaver
             ActionEffectFuncHook.Enable();
             ActionRequestFuncHook.Enable();
             //AdjustActionIdFuncHook.Enable();
-
+            /*
             CmdManager.AddHandler(commandName, new CommandInfo(OnCommand)
             {
                 HelpMessage = "Double weaving in high latency network."
             });
+            */
         }
 
         private void InitPingPluginIPC()
@@ -166,14 +167,15 @@ namespace DoubleWeaver
                         {
                             actionRequestTime.Remove(actionEffect.ActionId);
                             elapsedTime = Math.Max(stopwatch.ElapsedMilliseconds / 2, elapsedTime);
-                            laggingTime = Math.Min(Math.Min(elapsedTime, LastRTT), 500);
+                            elapsedTime = Math.Max(elapsedTime - 50, 0);
+                            laggingTime = Math.Min(Math.Min(elapsedTime, LastRTT), 300);
                         }
                         else
                         {
-                            laggingTime = Math.Min(LastRTT, 500);
+                            laggingTime = Math.Min(LastRTT, 300);
                         }
                         var serverAnimationLock = actionEffect.AnimationLockDuration * 1000;
-                        float animationLock = Math.Max(serverAnimationLock - laggingTime, 100);
+                        float animationLock = Math.Max(serverAnimationLock - laggingTime, 300);
                         byte[] bytes = BitConverter.GetBytes(animationLock / 1000);
                         Marshal.Copy(bytes, 0, a4 + 16, bytes.Length);
                         string logLine = $"Status ActionId:{actionEffect.ActionId} Sequence:{actionEffect.SourceSequence} " +
@@ -219,7 +221,7 @@ namespace DoubleWeaver
             ActionEffectFuncHook.Dispose();
             ActionRequestFuncHook.Dispose();
             // AdjustActionIdFuncHook.Dispose();
-            CmdManager.RemoveHandler(commandName);
+            // CmdManager.RemoveHandler(commandName);
             Interface.Dispose();
         }
 
