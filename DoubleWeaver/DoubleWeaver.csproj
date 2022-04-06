@@ -11,13 +11,13 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Dalamud">
-      <HintPath>..\..\..\Dalamud\Dalamud.Updater\bin\Release\6.0.0.0\Dalamud.dll</HintPath>
+      <HintPath>..\..\..\Dalamud\Dalamud.Updater\bin\Release\6.3.0.9\Dalamud.dll</HintPath>
     </Reference>
     <Reference Include="ImGui.NET">
-      <HintPath>..\..\..\Dalamud\Dalamud.Updater\bin\Release\6.0.0.0\ImGui.NET.dll</HintPath>
+      <HintPath>..\..\..\Dalamud\Dalamud.Updater\bin\Release\6.3.0.9\ImGui.NET.dll</HintPath>
     </Reference>
     <Reference Include="ImGuiScene">
-      <HintPath>..\..\..\Dalamud\Dalamud.Updater\bin\Release\6.0.0.0\ImGuiScene.dll</HintPath>
+      <HintPath>..\..\..\Dalamud\Dalamud.Updater\bin\Release\6.3.0.9\ImGuiScene.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>
