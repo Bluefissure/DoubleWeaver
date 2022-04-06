@@ -6,7 +6,7 @@ Double weaving in high latency network by subtracting the connection latency / a
 
 You must install **PingPlugin** for this plugin to work.
 
-Follow the [instructions](https://github.com/Bluefissure/DalamudPlugins/tree/Bluefissure-api4#how-to-use) to add my custom repo in Dalamud.
+Follow the [instructions](https://github.com/Bluefissure/DalamudPlugins/tree/Bluefissure#how-to-use) to add my custom repo in Dalamud.
 
 ### FAQ
 
