@@ -222,7 +222,6 @@ namespace DoubleWeaver
             ActionRequestFuncHook.Dispose();
             // AdjustActionIdFuncHook.Dispose();
             // CmdManager.RemoveHandler(commandName);
-            Interface.Dispose();
         }
 
         private void OnCommand(string command, string args)

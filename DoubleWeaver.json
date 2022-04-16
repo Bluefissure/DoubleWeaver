@@ -4,10 +4,10 @@
   "Punchline": "Double weaving even far",
   "Description": "Double weaving in high latency network.",
   "InternalName": "DoubleWeaver",
-  "AssemblyVersion": "1.0.4.1",
+  "AssemblyVersion": "1.0.5.0",
   "RepoUrl": "https://github.com/Bluefissure/DoubleWeaver",
   "IconUrl": "https://github.com/Bluefissure/DoubleWeaver/blob/master/images/icon.png",
   "ApplicableVersion": "any",
   "Tags": [ "bluefissure", "doublewaver"],
-  "DalamudApiLevel": 5
+  "DalamudApiLevel": 6
 }
