@@ -14,6 +14,7 @@ using Dalamud.Game.ClientState;
 using Dalamud.Data;
 using Dalamud.Logging;
 using Dalamud.Plugin.Ipc;
+using Dalamud.Plugin.Services;
 
 namespace DoubleWeaver
 {
@@ -49,23 +50,27 @@ namespace DoubleWeaver
         private delegate void UpdateRTTDelegate(ExpandoObject expando);
 
         [PluginService]
-        public static CommandManager CmdManager { get; private set; }
+        public static ICommandManager CmdManager { get; private set; }
         [PluginService]
-        public static Framework Framework { get; private set; }
+        public static IFramework Framework { get; private set; }
         [PluginService]
-        public static SigScanner SigScanner { get; private set; }
+        public static ISigScanner SigScanner { get; private set; }
         [PluginService]
         public static DalamudPluginInterface Interface { get; private set; }
         [PluginService]
-        public static GameGui GameGui { get; private set; }
+        public static IGameGui GameGui { get; private set; }
         [PluginService]
-        public static ChatGui ChatGui { get; private set; }
+        public static IChatGui ChatGui { get; private set; }
         [PluginService]
-        public static ToastGui ToastGui { get; private set; }
+        public static IToastGui ToastGui { get; private set; }
         [PluginService]
-        public static ClientState ClientState { get; private set; }
+        public static IClientState ClientState { get; private set; }
         [PluginService]
-        public static DataManager Data { get; private set; }
+        public static IDataManager Data { get; private set; }
+        [PluginService]
+        public static IGameInteropProvider Hook { get; private set; }
+        [PluginService]
+        public static IPluginLog Log { get; private set; }
 
         public static ICallGateSubscriber<object, object> IpcSubscriber;
 
@@ -90,17 +95,17 @@ namespace DoubleWeaver
             InitPingPluginIPC();
 
             ActionEffectFunc = SigScanner.ScanText("4D 8B F9 0F B6 91 ?? ?? ?? ??") - 0xF;
-            PluginLog.Log($"ActionEffectFunc:{ActionEffectFunc:X}");
+            Log.Info($"ActionEffectFunc:{ActionEffectFunc:X}");
             ActionRequestFunc = SigScanner.ScanText("E8 ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? FF 50 18");
-            PluginLog.Log($"ActionRequestFunc:{ActionRequestFunc:X}");
+            Log.Info($"ActionRequestFunc:{ActionRequestFunc:X}");
             // AdjustActionIdFunc = this.pi.TargetModuleScanner.ScanText("8B DA BE ?? ?? ?? ??") - 0xF;
             // PluginLog.Log($"AdjustActionIdFunc:{AdjustActionIdFunc:X}");
 
-            ActionEffectFuncHook = new Hook<ActionEffectFuncDelegate>(
+            ActionEffectFuncHook = Hook.HookFromAddress<ActionEffectFuncDelegate>(
                 ActionEffectFunc,
                 new ActionEffectFuncDelegate(ActionEffectFuncDetour)
             );
-            ActionRequestFuncHook = new Hook<ActionRequestFuncDelegate>(
+            ActionRequestFuncHook = Hook.HookFromAddress<ActionRequestFuncDelegate>(
                 ActionRequestFunc,
                 new ActionRequestFuncDelegate(ActionRequestFuncDetour)
             );
@@ -124,14 +129,14 @@ namespace DoubleWeaver
 
         private void InitPingPluginIPC()
         {
-            PluginLog.Log("Initializing IPC");
+            Log.Info("Initializing IPC");
             IpcSubscriber = Interface.GetIpcSubscriber<object, object>("PingPlugin.Ipc");
             IpcSubscriber.Subscribe(UpdateRTTDetour);
         }
 
         private void UpdateRTTDetour(dynamic expando)
         {
-            PluginLog.LogDebug($"LastRTT:{expando.LastRTT} AverageRTT:{expando.AverageRTT}");
+            Log.Debug($"LastRTT:{expando.LastRTT} AverageRTT:{expando.AverageRTT}");
             RTT = (long)expando.AverageRTT;
             LastRTT = (long)expando.LastRTT;
         }
