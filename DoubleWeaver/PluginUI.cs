@@ -58,7 +58,7 @@ namespace DoubleWeaver
             {
                 return;
             }
-
+            /*
             ImGui.SetNextWindowSize(new Vector2(375, 330), ImGuiCond.FirstUseEver);
             ImGui.SetNextWindowSizeConstraints(new Vector2(375, 330), new Vector2(float.MaxValue, float.MaxValue));
             if (ImGui.Begin("My Amazing Window", ref this.visible, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
@@ -78,6 +78,7 @@ namespace DoubleWeaver
                 ImGui.Unindent(55);
             }
             ImGui.End();
+            */
         }
 
         public void DrawSettingsWindow()
@@ -86,7 +87,7 @@ namespace DoubleWeaver
             {
                 return;
             }
-
+            /*
             ImGui.SetNextWindowSize(new Vector2(232, 75), ImGuiCond.Always);
             if (ImGui.Begin("A Wonderful Configuration Window", ref this.settingsVisible,
                 ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
@@ -101,6 +102,7 @@ namespace DoubleWeaver
                 }
             }
             ImGui.End();
+            */
         }
     }
 }

@@ -38,7 +38,7 @@ namespace DoubleWeaver
 
         public IntPtr ActionRequestFunc;
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
-        private delegate Int64 ActionRequestFuncDelegate(Int64 a1, uint a2, uint a3);
+        private delegate Int64 ActionRequestFuncDelegate(Int64 a1, uint a2, uint a3, Int64 a4, IntPtr a5, uint a6);
         private Hook<ActionRequestFuncDelegate> ActionRequestFuncHook;
         /*
         public IntPtr AdjustActionIdFunc;
@@ -56,7 +56,7 @@ namespace DoubleWeaver
         [PluginService]
         public static ISigScanner SigScanner { get; private set; }
         [PluginService]
-        public static DalamudPluginInterface Interface { get; private set; }
+        public static IDalamudPluginInterface Interface { get; private set; }
         [PluginService]
         public static IGameGui GameGui { get; private set; }
         [PluginService]
@@ -90,13 +90,12 @@ namespace DoubleWeaver
         {
             
             this.configuration = Interface.GetPluginConfig() as Configuration ?? new Configuration();
-            this.configuration.Initialize(Interface);
 
             InitPingPluginIPC();
 
-            ActionEffectFunc = SigScanner.ScanText("4D 8B F9 0F B6 91 ?? ?? ?? ??") - 0xF;
+            ActionEffectFunc = SigScanner.ScanText("44 0F B6 91 ?? ?? ?? ?? 4D 8B F9") - 0xC;
             Log.Info($"ActionEffectFunc:{ActionEffectFunc:X}");
-            ActionRequestFunc = SigScanner.ScanText("E8 ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? FF 50 18");
+            ActionRequestFunc = SigScanner.ScanText("E8 ?? ?? ?? ?? 41 3A C5 0F 85 ?? ?? ?? ?? ");
             Log.Info($"ActionRequestFunc:{ActionRequestFunc:X}");
             // AdjustActionIdFunc = this.pi.TargetModuleScanner.ScanText("8B DA BE ?? ?? ?? ??") - 0xF;
             // PluginLog.Log($"AdjustActionIdFunc:{AdjustActionIdFunc:X}");
@@ -158,7 +157,7 @@ namespace DoubleWeaver
             {
                 if (((size == 0x78) || (size == 0x278) ||
                     (size == 0x4B8) || (size == 0x6F8) || (size == 0x938)) && 
-                    (int)sourceActorId == ClientState.LocalPlayer?.ObjectId)
+                    (ulong)sourceActorId == ClientState.LocalPlayer?.GameObjectId)
                 {
                     var actionId = Marshal.ReadInt32(a4 + 8);
                     actionRequestTime.TryGetValue((uint)actionId, out Stopwatch stopwatch);
@@ -186,20 +185,20 @@ namespace DoubleWeaver
                         string logLine = $"Status ActionId:{actionEffect.ActionId} Sequence:{actionEffect.SourceSequence} " +
                             $"Elapsed:{elapsedTime}ms RTT:{RTT}ms Lagging:{laggingTime}ms " +
                             $"AnimationLockDuration:{serverAnimationLock}ms -> {animationLock}ms";
-                        PluginLog.LogDebug(logLine);
+                        Log.Debug(logLine);
                     }
                 }
             }
             catch(Exception e)
             {
-                PluginLog.Log($"Exception: {e}");
-                PluginLog.Log("Don't crash the game");
+                Log.Debug($"Exception: {e}");
+                Log.Debug("Don't crash the game");
             }
             var result = ActionEffectFuncHook.Original(a1, sourceActorId, a3, a4, size);
             return result;
         }
 
-        private Int64 ActionRequestFuncDetour(Int64 a1, uint a2, uint a3)
+        private Int64 ActionRequestFuncDetour(Int64 a1, uint a2, uint a3, Int64 a4, IntPtr a5, uint a6)
         {
             Stopwatch stopwatch = new Stopwatch();
             try
@@ -208,13 +207,13 @@ namespace DoubleWeaver
                 if (actionRequestTime.ContainsKey(a3))
                     actionRequestTime.Remove(a3);
                 actionRequestTime.Add(a3, stopwatch);
-                PluginLog.LogDebug(logLine);
+                Log.Debug(logLine);
             }
             catch
             {
-                PluginLog.Log("Don't crash the game");
+                Log.Info("Don't crash the game");
             }
-            var result = ActionRequestFuncHook.Original(a1, a2, a3);
+            var result = ActionRequestFuncHook.Original(a1, a2, a3, a4, a5, a6);
             stopwatch.Start();
             return result;
         }
