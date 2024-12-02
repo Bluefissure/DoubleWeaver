@@ -5,7 +5,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="DalamudPackager" Version="2.1.13" />
+    <PackageReference Include="DalamudPackager" Version="11.0.0" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
     <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
